@@ -1,0 +1,22 @@
+﻿namespace = slavery_mod
+
+# Mod is Installed
+slavery_mod.0001 = {
+	hidden = yes
+	scope = none
+	
+	immediate = {
+		set_global_variable = {
+			name = slavery_mod_installed
+			value = yes
+		}
+
+		# For GlobalVar Error
+		if = {
+			limit = {
+				exists = global_var:slavery_mod_installed
+			}
+			# do nothing
+		}
+	}
+}
