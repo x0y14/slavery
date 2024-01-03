@@ -1,0 +1,3 @@
+﻿l_english:
+  game_concept_slave: "Slave"
+  game_concept_slave_desc: "A $game_concept_slave$ is crippled character with limited inheritance of titles. Through purchase or $sell_slave_interaction$, [prisoner|e] become [slave|e]"
