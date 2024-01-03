@@ -40,5 +40,9 @@
 				target = scope:recipient
 			}
 		}
+		# TODO: 奴隷にされたEvent
+		# scope:recipient = {
+			# trigger_event = slavery_enslave.0001
+		# }
 	}
 }
