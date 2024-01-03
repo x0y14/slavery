@@ -4,3 +4,26 @@
   enslave_interaction_desc: "Decide to treat [recipient.GetShortUIName] as [slave|e]."
   ## is_valid_showing_failures_only
   ENSLAVE_HAS_TRAIT_SLAVE: "[recipient.GetShortUIName] is [slave|e]"
+
+
+  ### SELL SLAVE INTERACTION
+  sell_slave_interaction: "Sell Slave"
+  sell_slave_interaction_desc: "Propose to [recipient.GetShortUIName] the purchase of a [slave|e] you own."
+  ## prompt
+  SELL_SLAVE_SELECT_SLAVE_TO_TRADE_PROMPT: "Select [character|e] to sell"
+  ## notification_text
+  SELL_SLAVE_PROPOSAL:0 "Would you like to buy [secondary_recipient.GetCulture.GetCollectiveNounNoTooltip] [slave|e], [secondary_recipient.GetShortUIName] ?"
+  ## send_option
+  SELL_SLAVE_MAKE_LOYALTY:1 "make [slave|e] [hook_i] loyalty"
+  ## ai_accept
+  SLAVERY_PRICE_OPINION: "Price: $VALUE|=+0$"
+  # 参考 RANSOM_CURRENT_PAY_GOLD_OPTION
+  SLAVERY_CURRENT_PAY_GOLD_OPTION:0 "Cannot Pay [gold_i]: $VALUE|=+0$"
+  SLAVERY_IS_MARRIED_OPINION: "[secondary_recipient.GetShortUIName] is married: $VALUE|=+0$ "
+  SLAVERY_TOO_YOUNG_OPINION: "[secondary_recipient.GetShortUIName] is too young: $VALUE|=+0$"
+  SLAVERY_TOO_OLD_OPINION: "[secondary_recipient.GetShortUIName] is too old: $VALUE|=+0$"
+  SLAVERY_APPROPRIATE_AGE_FOR_EDU_OPINION: "Appropriate age for education(age: [secondary_recipient.GetAge]): $VALUE|=+0$"
+  SLAVERY_WILL_SOON_BE_AN_ADULT_OPINION: "[secondary_recipient.GetShortUIName] will soon be an adult: $VALUE|=+0$"
+  SLAVERY_IS_AN_ADULT_OPINION: "[secondary_recipient.GetShortUIName] is an adult: $VALUE|=+0$"
+  SLAVERY_APPOROPRIATE_AGE_FOR_MARRIAGE_OPINION: "Appropriate age for marriage: $VALUE|=+0$"
+  SLAVERY_NOT_SUITABLE_MARRIAGE_OPINION: "Not a suitable marriage: $VALUE|=+0$"

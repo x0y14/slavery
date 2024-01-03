@@ -1,0 +1,791 @@
+﻿sell_slave_interaction = {
+	icon = prison
+	category = interaction_category_diplomacy
+	common_interaction = yes
+
+	desc = sell_slave_interaction_desc
+
+	populate_recipient_list = {
+		scope:actor = {
+			every_prisoner = {
+				# limit = {
+				# 	NOT = { is_in_prison_type = dungeon }
+				# }
+				add_to_list = characters
+			}
+		}
+		scope:actor = {
+			every_courtier = {
+				limit = {
+					has_trait = slave
+				}
+				add_to_list = characters
+			}
+		}
+	}
+
+	prompt = SELL_SLAVE_SELECT_SLAVE_TO_TRADE_PROMPT
+
+	notification_text = SELL_SLAVE_PROPOSAL
+
+	is_shown = {
+		NOT = { scope:recipient = scope:actor }
+		scope:actor = {
+			OR = {
+				# 自分で奴隷市場を持っているか
+				any_held_county = {
+					any_county_province = {
+						has_building_or_higher = slave_market_01
+					}
+				}
+				# いずれかの封臣が奴隷市場を持っている
+				any_vassal = {
+					any_held_county = {
+						any_county_province = {
+							has_building_or_higher = slave_market_01
+						}
+					}
+				}
+			}
+		}
+		scope:recipient = { is_landed = yes }
+	}
+
+	is_valid_showing_failures_only = {
+		scope:actor = {
+			any_prisoner = {
+				count > 0
+			}
+		}
+	}
+
+	can_be_picked = {
+		NOT = { is_landed = yes }
+		NOT = { is_close_or_extended_family_of = scope:recipient }
+		NOT = { is_spouse_of = scope:recipient }
+		NOT = { is_close_or_extended_family_of = scope:actor }
+		NOT = { is_spouse_of = scope:actor }
+	}
+
+	cost = {}
+
+	on_send = {
+		# 私を売りに出した
+	}
+
+	on_accept = {
+		scope:actor = {
+			trigger_event = slave_trade.0101
+		}
+	}
+
+	on_decline = {
+		scope:actor = {
+			trigger_event = slave_trade.0102
+		}
+	}
+
+
+	send_options_exclusive = yes
+	# 安い値段 在庫処分的な
+	send_option = {
+		is_shown = { always = yes }
+		flag = pt_sum_small
+		localization = "PT_SUM_SMALL"
+	}
+	# 普通の値段 子供とか
+	send_option = {
+		is_shown = { always = yes }
+		flag = pt_sum_medium
+		starts_enabled = { always = yes }
+		localization = "PT_SUM_MEDIUM"
+	}
+	# 高い値段 良い遺伝子を持っている人
+	send_option = {
+		is_shown = { always = yes }
+		flag = pt_sum_large
+		localization = "PT_SUM_LARGE"
+	}
+	# 忠誠を誓わせる 兵士向け
+	send_option = {
+		is_shown = {
+			exists = scope:secondary_recipient
+		}
+		is_valid = {
+			exists = scope:secondary_recipient
+			NOT = {
+				scope:recipient.culture = { has_cultural_parameter = can_recruit_prisoners_easily }
+			}
+			# TODO: hookつけられるかの確認でエラーが出るので調査
+			# scope:recipient = {
+			# 	can_add_hook = {
+			# 		target = scope:secondary_recipient
+			# 		type = loyalty_hook
+			# 	}
+			# }
+		}
+		flag = loyalty
+		localization = SELL_SLAVE_MAKE_LOYALTY
+	}
+	should_use_extra_icon = {}
+	extra_icon = "gfx/interface/icons/character_interactions/hook_icon.dds"
+
+	ai_maybe = yes
+	ai_accept = {
+		base = 30
+
+		# 値段による検討
+		modifier = {
+			desc = SLAVERY_PRICE_OPINION
+			add = {
+				if = {
+					limit = { scope:pt_sum_small = yes }
+					value = -5
+				}
+				else_if = {
+					limit = { scope:pt_sum_medium = yes }
+					value = -20
+				}
+				else_if = {
+					limit = { scope:pt_sum_large = yes }
+					value = -30
+				}
+				else_if = {
+					limit = { scope:loyalty = yes }
+					value = -50
+				}
+			}
+		}
+
+		# そもそも支払えるのかという検討
+		modifier = {
+			add = -1000
+			desc = SLAVERY_CURRENT_PAY_GOLD_OPTION
+			trigger = {
+				OR = {
+					AND = {
+						scope:pt_sum_small = yes
+						scope:recipient.gold < SLAVE_PRICE_SUM_SMALL
+					}
+					AND = {
+						scope:pt_sum_medium = yes
+						scope:recipient.gold < SLAVE_PRICE_SUM_MEDIUM
+					}
+					AND = {
+						scope:pt_sum_large = yes
+						scope:recipient.gold < SLAVE_PRICE_SUM_LARGE
+					}
+					AND = {
+						scope:loyalty = yes
+						scope:recipient.gold < SLAVE_PRICE_SUM_LOYALTY
+					}
+				}
+			}
+		}
+
+		# 既婚者はいらない
+		modifier = {
+			add = -1000
+			desc = SLAVERY_IS_MARRIED_OPINION
+			trigger = {
+				scope:secondary_recipient = {
+					is_married = yes
+				}
+			}
+		}
+
+		# # 職業適性による検討
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_court_physician_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = court_physician_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = court_physician_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:court_physician_court_position >= 3 
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:court_physician_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_cultural_emissary_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = cultural_emissary_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = cultural_emissary_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:cultural_emissary_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:cultural_emissary_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_keeper_of_swans_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = keeper_of_swans_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = keeper_of_swans_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:keeper_of_swans_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:keeper_of_swans_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_chief_qadi_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = chief_qadi_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = chief_qadi_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:chief_qadi_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:chief_qadi_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_garuda_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = garuda_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = garuda_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:garuda_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:garuda_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_court_gardener_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = court_gardener_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = court_gardener_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:court_gardener_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:court_gardener_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_lady_in_waiting_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = lady_in_waiting_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = lady_in_waiting_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:lady_in_waiting_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:lady_in_waiting_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_antiquarian_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = antiquarian_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = antiquarian_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:antiquarian_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:antiquarian_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_travel_leader_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = travel_leader_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = travel_leader_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:travel_leader_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:travel_leader_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_wet_nurse_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = wet_nurse_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = wet_nurse_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:wet_nurse_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:wet_nurse_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_court_tutor_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = court_tutor_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = court_tutor_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:court_tutor_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:court_tutor_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_food_taster_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = food_taster_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = food_taster_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:food_taster_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:food_taster_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_master_of_horse_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = master_of_horse_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = master_of_horse_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:master_of_horse_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:master_of_horse_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_master_of_hunt_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = master_of_hunt_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = master_of_hunt_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:master_of_hunt_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:master_of_hunt_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_royal_architect_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = royal_architect_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = royal_architect_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:royal_architect_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:royal_architect_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_high_almoner_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = high_almoner_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = high_almoner_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:high_almoner_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:high_almoner_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_seneschal_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = seneschal_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = seneschal_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:seneschal_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:seneschal_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_cupbearer_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = cupbearer_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = cupbearer_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:cupbearer_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:cupbearer_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_chief_eunuch_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = chief_eunuch_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = chief_eunuch_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:chief_eunuch_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:chief_eunuch_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_court_jester_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = court_jester_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = court_jester_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:court_jester_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:court_jester_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_court_poet_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = court_poet_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = court_poet_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:court_poet_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:court_poet_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_court_musician_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = court_musician_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = court_musician_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:court_musician_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:court_musician_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_bodyguard_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = bodyguard_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = bodyguard_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:bodyguard_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:bodyguard_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_champion_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = champion_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = champion_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:champion_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:champion_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_executioner_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = executioner_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = executioner_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:executioner_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:executioner_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_court_artificer_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = court_artificer_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = court_artificer_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:court_artificer_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:court_artificer_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_master_assassin_court_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = master_assassin_court_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = master_assassin_court_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:master_assassin_court_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:master_assassin_court_position
+		# 	}
+		# }
+		# modifier = { # courtポジションあるけど、雇っていない、この奴隷を雇えば埋められる
+		# 	desc = SLAVE_SUITABLE_FOR_court_cave_hermit_position
+		# 	trigger = {
+		# 		# その奴隷はPOSITIONとして働けますか?
+		# 		scope:secondary_recipient = { can_be_employed_as = court_cave_hermit_position }
+		# 		# recipientは奴隷をPOSITIONとして雇えますか?
+		# 		scope:recipient = { can_employ_court_position_type = court_cave_hermit_position }
+		# 		# 最低でもAverage平均適正以上
+		# 		scope:secondary_recipient.aptitude:court_cave_hermit_position >= 3
+		# 	}
+		# 	# 0~4の適正値に5をかける
+		# 	add = {
+		# 		value = 5
+		# 		multiply = scope:secondary_recipient.aptitude:court_cave_hermit_position
+		# 	}
+		# }
+
+
+		# Tr: Only the Strong, Warriors by Merit, Martial Admiration, Warrior Culture
+		# 武勇値
+		# Tr: Reverence for Veterans
+		# よい軍事特性
+		# Tr: Recognition of Talent
+		# よい特性...
+
+		# なんらかのskill値が10を超えている + 5
+		# なんらかのskill値が15を超えている + 10
+		# なんらかのskill値が20を超えている + 20
+
+		# 遺伝特性
+
+		# 男
+		# 0 <= x < 4若すぎる -20
+		# 4 <= x < 8良い感じ +5
+		# 8 <= x < 12教育にあまり適していない-5
+		# 12<= x < 16教育しにくい-10
+		# 16<= x < 40 適切な労働力
+		# 40<= x 年寄り-100 老兵持ってない場合
+		modifier = {
+			add = -10
+			desc = SLAVERY_TOO_YOUNG_OPINION
+			trigger = {
+				scope:secondary_recipient = {
+					is_male = yes
+					age < 4
+				}
+			}
+		}
+		modifier = {
+			add = 5
+			desc = SLAVERY_APPROPRIATE_AGE_FOR_EDU_OPINION
+			trigger = {
+				scope:secondary_recipient = {
+					is_male = yes
+					AND = {
+						age >= 4
+						age < 8
+					}
+				}
+			}
+		}
+		modifier = {
+			add = -5
+			desc = SLAVERY_WILL_SOON_BE_AN_ADULT_OPINION
+			trigger = {
+				scope:secondary_recipient = {
+					is_male = yes
+					age >= 8
+					age < 16
+				}
+			}
+		}
+		modifier = {
+			add = 10
+			desc = SLAVERY_IS_AN_ADULT_OPINION
+			trigger = {
+				scope:secondary_recipient = {
+					is_male = yes
+					age >= 16
+					age < 40
+				}
+			}
+		}
+		modifier = {
+			add = -20
+			desc = SLAVERY_TOO_OLD_OPINION
+			trigger = {
+				scope:secondary_recipient = {
+					is_male = yes
+					age >= 40
+				}
+			}
+		}
+
+		# 女
+		# 0~16
+		# 16~20の未婚女性
+		modifier = {
+			add = 20
+			desc = SLAVERY_APPOROPRIATE_AGE_FOR_MARRIAGE_OPINION
+			trigger = {
+				scope:secondary_recipient = {
+					is_female = yes
+					is_healthy = yes
+					AND = {
+						age < 25
+						age > 15
+					}
+				}
+			}
+		}
+		# 結婚相手として適していない
+		modifier = {
+			add = -70
+			desc = SLAVERY_NOT_SUITABLE_MARRIAGE_OPINION
+			scope:secondary_recipient = {
+				OR = {
+					# 特殊性癖等々
+					has_trait = adulterer
+					has_trait = fornicator
+					has_trait = deviant
+					has_trait = sodomite
+					has_trait = incestuous
+					has_trait = pregnant
+					# 劣性遺伝子
+					has_trait = scaly
+					has_trait = clubfooted
+					has_trait = dwarf
+					has_trait = hunchbacked
+					has_trait = spindly
+					has_trait = physique_bad
+					has_trait = beauty_bad
+					has_trait = intellect_bad
+					# 去勢
+					has_trait = eunuch
+				}
+			}
+		}
+		
+		# 高齢過ぎる
+		modifier = {
+			add = -100
+			desc = SLAVERY_TOO_OLD_OPINION
+			scope:secondary_recipient = {
+				AND = {
+					is_female = yes
+					age >= 40
+				}
+			}
+		}
+		modifier = {
+			add = -100
+			desc = SLAVERY_TOO_OLD_OPINION
+			scope:secondary_recipient = {
+				AND = {
+					is_female = yes
+					age >= 40
+				}
+			}
+		}
+	}
+}
