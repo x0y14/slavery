@@ -1,0 +1,9 @@
+﻿l_english:
+  # Slave Market Group
+  building_type_slave_market_01:0 "Slave Market"
+  building_type_slave_market_01_desc:0 "Few places allow people to relax and socialize as well as a beautiful garden. While a small and personal garden would suffice for most, only the most spectacular of creations is good enough for the wealthy and powerful!"
+  slave_market_effect_desc: "slave_market_effect_desc"
+
+  # Slave Market Level 1
+  building_slave_market_01:0 "Slave Market 01"
+  building_slave_market_01_desc:0 "A small garden enclosed by stone walls. It provides a small haven of peace and comfort by shutting out the busy world outside."

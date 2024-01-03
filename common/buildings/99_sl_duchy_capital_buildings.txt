@@ -1,0 +1,44 @@
+﻿# 奴隷市場
+# Tradeports(貿易港)の上位互換として構想
+slave_market_01 = {
+	construction_time = slow_construction_time
+	effect_desc = slave_market_effect_desc
+	type_icon = "icon_building_tradeport.dds"
+
+	can_construct_potential = {
+		building_common_tradeport_requirement_terrain = yes
+		trigger_if = { # Sometimes tribals can into botes
+			limit = {
+				NOT = {
+					culture = {
+						has_cultural_parameter = trade_ports_enabled_for_tribals
+					}
+				}
+			}
+
+			building_requirement_castle_city_church = { LEVEL = 01 }
+		}
+		trigger_else = {
+			OR = {
+				has_building_or_higher = tribe_01
+				building_requirement_castle_city_church = { LEVEL = 01 }
+			}
+		}
+	}
+	
+	can_construct_showing_failures_only = {
+		culture = {
+			has_innovation = innovation_ledger
+		}
+	}
+	
+	is_enabled = {
+		county.holder = { has_title = prev.duchy }
+		is_coastal = yes
+	}
+	show_disabled = yes
+
+	cost_gold = expensive_building_tier_3_cost
+
+	type = duchy_capital
+}
