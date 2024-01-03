@@ -1,0 +1,53 @@
+﻿# 奴隷
+slave = {
+	category = personality
+	group = slave
+	level = 1
+
+	same_opinion = 10
+	general_opinion = -10
+
+	# 継承、請求権が発生しないように(修道士と同じ効果)
+	inheritance_blocker = all
+	claim_inheritance_blocker = all
+
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					NOT = { exists = this }
+				}
+				desc = trait_slave_desc
+			}
+			desc = trait_slave_character_desc
+		}
+	}
+
+	birth = 0
+	random_creation_weight = 0
+}
+
+# 解放奴隷
+freed_slave = {
+	category = personality
+	group = slave
+	level = 2
+
+	same_opinion = 10
+	general_opinion = -5
+
+	desc = {
+		first_valid = {
+			triggered_desc = {
+				trigger = {
+					NOT = { exists = this }
+				}
+				desc = trait_freed_slave_desc
+			}
+			desc = trait_freed_slave_character_desc
+		}
+	}
+
+	birth = 0
+	random_creation_weight = 0
+}

@@ -1,0 +1,8 @@
+﻿l_english:
+  trait_slave:0 "Slave"
+  trait_slave_desc:0 "This character was sold into slavery."
+  trait_slave_character_desc:0 "[ROOT.GetCharacter.GetFirstNameNoTooltip] was sold into slavery."
+
+  trait_freed_slave:0 "Freed Slave"
+  trait_freed_slave_desc:0 "This character is a freed former slave."
+  trait_freed_slave_character_desc:0 "[ROOT.GetCharacter.GetFirstNameNoTooltip] is a freed former slave."
