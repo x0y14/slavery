@@ -1,0 +1,44 @@
+﻿enslave_interaction = {
+	icon = prison
+	category = interaction_category_diplomacy
+	common_interaction = yes
+
+	desc = enslave_interaction_desc
+
+	is_shown = {
+		NOT = { scope:recipient = scope:actor }
+		scope:recipient = {
+			is_imprisoned = yes
+		}
+	}
+
+	is_valid_showing_failures_only = {
+		custom_tooltip = {
+			text = ENSLAVE_HAS_TRAIT_SLAVE
+			scope:recipient = {
+				NOT = { has_trait = slave }
+			}
+		}
+
+		scope:recipient = {
+			NOT = { is_landed = yes }
+			NOT = { is_vassal_of = scope:actor }
+			NOT = { is_close_or_extended_family_of = scope:actor }
+			NOT = { is_spouse_of = scope:actor }
+			is_imprisoned_by = scope:actor
+		}
+	}
+
+	ignores_pending_interaction_block = yes
+	auto_accept = yes
+	on_accept = {
+		scope:recipient = { add_trait = slave }
+		# 義務Hookをつける(雇うときやすくなる効果がある)
+		scope:actor = {
+			add_hook = {
+				type = obligation_hook
+				target = scope:recipient
+			}
+		}
+	}
+}

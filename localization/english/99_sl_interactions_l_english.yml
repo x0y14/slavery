@@ -1,0 +1,6 @@
+﻿l_english:
+  ### ENSLAVE INTERACTION
+  enslave_interaction: "Enslave"
+  enslave_interaction_desc: "Decide to treat [recipient.GetShortUIName] as [slave|e]."
+  ## is_valid_showing_failures_only
+  ENSLAVE_HAS_TRAIT_SLAVE: "[recipient.GetShortUIName] is [slave|e]"
